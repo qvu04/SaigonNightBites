@@ -4,10 +4,9 @@ import { toast } from 'sonner'
 import { FiHeart } from 'react-icons/fi'
 import Header from '../components/layout/Header'
 import BottomNav from '../components/layout/BottomNav'
-import FoodCard from '../components/FoodCard'
-import SkeletonCard from '../components/SkeletonCard'
 import { getFavorites, removeFavorite } from '../api/favorites'
 import type { FavoritePlace } from '../types'
+import { FoodCard, SkeletonCard } from '../components'
 
 export default function SavedPlaces() {
   const navigate = useNavigate()
@@ -56,7 +55,7 @@ export default function SavedPlaces() {
               Hãy khám phá và lưu lại những quán ưng ý!
             </p>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/home')}
               className="px-6 py-3 rounded-xl bg-orange-500 text-white font-semibold text-sm"
             >
               Khám phá ngay
@@ -70,8 +69,8 @@ export default function SavedPlaces() {
                 place={{
                   place_id: fav.place_id,
                   name: fav.name,
-                  rating: fav.rating,
-                  vicinity: fav.vicinity,
+                  rating: fav.rating || 0,
+                  vicinity: fav.vicinity || "",
                   location: fav.location,
                   photo_url: fav.photo_url,
                   open_now: true,

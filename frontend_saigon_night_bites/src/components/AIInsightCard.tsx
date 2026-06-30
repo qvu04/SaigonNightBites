@@ -5,7 +5,7 @@ interface Props {
   keywords: string[]
 }
 
-export default function AIInsightCard({ reason, keywords }: Props) {
+export const AIInsightCard = ({ reason, keywords }: Props) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}

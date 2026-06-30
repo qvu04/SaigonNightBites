@@ -15,7 +15,7 @@ function SkeletonItem() {
   )
 }
 
-export default function SkeletonCard({ count = 3 }: { count?: number }) {
+export const SkeletonCard = ({ count = 3 }: { count?: number }) => {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (

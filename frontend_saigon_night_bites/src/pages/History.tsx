@@ -6,22 +6,7 @@ import BottomNav from '../components/layout/BottomNav'
 import { getHistory } from '../api/history'
 import { formatMood, formatBudget } from '../utils/formatCurrency'
 import type { SearchHistoryItem } from '../types'
-
-const DAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
-
-function formatViDate(dateStr: string): string {
-  const d = new Date(dateStr)
-  const day = DAYS[d.getDay()]
-  const date = d.getDate()
-  const month = d.getMonth() + 1
-  const year = d.getFullYear()
-  return `${day}, ${date} tháng ${month} ${year}`
-}
-
-function formatRadiusKm(meters: number): string {
-  return `${(meters / 1000).toFixed(0)} km`
-}
-
+import { formatRadiusKm, formatViDate } from '../utils'
 export default function History() {
   const [history, setHistory] = useState<SearchHistoryItem[]>([])
   const [loading, setLoading] = useState(true)

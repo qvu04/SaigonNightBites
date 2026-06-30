@@ -11,7 +11,7 @@ interface Props {
   delay?: number
 }
 
-export default function FoodCard({ place, isFavorited, onToggleFavorite, delay = 0 }: Props) {
+export const FoodCard = ({ place, isFavorited, onToggleFavorite, delay = 0 }: Props) => {
   const { name, rating, user_ratings_total, vicinity, location, photo_url, distance, open_now } = place
 
   const handleDirections = () => {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { FiHome, FiCompass, FiHeart, FiClock, type IconType } from 'react-icons/fi'
 import { clsx } from 'clsx'
-import DarkModeSwitch from '../DarkModeSwitch'
+import { DarkModeSwitch } from '../DarkModeSwitch'
 
 interface NavItem {
   path: string
@@ -11,7 +11,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: '/', icon: FiHome, label: 'Trang chủ' },
+  { path: '/home', icon: FiHome, label: 'Trang chủ' },
   { path: '/discovery', icon: FiCompass, label: 'Kết quả' },
   { path: '/saved', icon: FiHeart, label: 'Yêu thích' },
   { path: '/history', icon: FiClock, label: 'Lịch sử' },
@@ -34,9 +34,8 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
-        visible ? 'translate-y-0' : '-translate-y-full'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'
+        }`}
     >
       <div className="backdrop-blur-md bg-white/80 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">

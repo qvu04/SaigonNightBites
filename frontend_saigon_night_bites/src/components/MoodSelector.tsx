@@ -16,7 +16,7 @@ interface Props {
   onChange: (mood: Mood) => void
 }
 
-export default function MoodSelector({ value, onChange }: Props) {
+export const MoodSelector = ({ value, onChange }: Props) => {
   return (
     <div className="grid grid-cols-3 gap-3">
       {MOODS.map((mood) => {

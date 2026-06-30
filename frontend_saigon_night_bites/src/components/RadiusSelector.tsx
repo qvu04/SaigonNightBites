@@ -12,7 +12,7 @@ interface Props {
   onChange: (radius: number) => void
 }
 
-export default function RadiusSelector({ value, onChange }: Props) {
+export const RadiusSelector = ({ value, onChange }: Props) => {
   return (
     <div className="flex gap-2">
       {RADII.map((r) => {

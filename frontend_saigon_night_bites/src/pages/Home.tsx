@@ -4,15 +4,13 @@ import { toast } from 'sonner'
 import { FiMapPin, FiAlertCircle, FiLogOut } from 'react-icons/fi'
 import Header from '../components/layout/Header'
 import BottomNav from '../components/layout/BottomNav'
-import MoodSelector from '../components/MoodSelector'
-import BudgetSelector from '../components/BudgetSelector'
-import RadiusSelector from '../components/RadiusSelector'
 import { useLocation } from '../context/LocationContext'
 import { useAuth } from '../context/AuthContext'
 import { getAIRecommendation } from '../api/ai'
 import { searchPlaces } from '../api/places'
 import type { Mood, Budget } from '../types'
 import type { AxiosError } from 'axios'
+import { BudgetSelector, MoodSelector, RadiusSelector } from '../components'
 
 const HOW_IT_WORKS = [
   {
@@ -153,7 +151,7 @@ export default function Home() {
                 </div>
               </div>
               <button
-                onClick={logout}
+                onClick={() => { void logout() }}
                 className="p-2 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 aria-label="Đăng xuất"
               >

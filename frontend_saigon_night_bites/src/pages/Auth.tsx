@@ -1,14 +1,14 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
-import animSrc from '../assets/animations/locationFood.lottie?url'
-import { loginUser, registerUser } from '../api/auth'
+import animSrc from '../assets/animations/food_location.lottie?url'
 import { useAuth } from '../context/AuthContext'
 import type { AxiosError } from 'axios'
+import { useLogin, useRegister } from '../hooks/mutation'
 
 interface FormValues {
   email: string
@@ -26,11 +26,19 @@ const HIGHLIGHTS = [
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const { mutateAsync: loginAsync, isPending: pendingLogin } = useLogin()
+  const { mutateAsync: registerAsync, isPending: pendingRegister } = useRegister()
+  const loading = isLogin ? pendingLogin : pendingRegister
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { login } = useAuth()
 
+  useEffect(() => {
+    const reason = searchParams.get('reason')
+    if (reason === 'expired') toast.info('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại')
+    if (reason === 'no_session') toast.info('Vui lòng đăng nhập để tiếp tục')
+  }, [])
   const {
     register,
     handleSubmit,
@@ -44,16 +52,16 @@ export default function Auth() {
     reset()
   }
 
-  const onSubmit = async (data: FormValues) => {
-    setLoading(true)
+  const onSubmit = async (payload: FormValues) => {
     try {
       if (isLogin) {
-        const res = await loginUser(data.email, data.password)
-        login(res.data.data.token, res.data.data.user)
+        const res = await loginAsync(payload)
+        login(res.data.accessToken, res.data.user, res.data.refreshToken, res.data.refreshExpiresAt)
         toast.success('Đăng nhập thành công! 🎉')
-        navigate('/')
+        const from = searchParams.get('from') || '/home'
+        navigate(from, { replace: true })
       } else {
-        await registerUser(data.email, data.password)
+        await registerAsync(payload)
         toast.success('Đăng ký thành công! Hãy đăng nhập.')
         switchTab(true)
       }
@@ -63,8 +71,6 @@ export default function Auth() {
         axiosErr.response?.data?.error ||
         (isLogin ? 'Email hoặc mật khẩu không đúng' : 'Đăng ký thất bại, vui lòng thử lại')
       toast.error(msg)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -85,7 +91,7 @@ export default function Auth() {
                 src={animSrc}
                 loop
                 autoplay
-                style={{ width: '100%', height: '100%' }}
+                style={{ width: '100%%', height: '100%' }}
               />
             </div>
           </div>
@@ -110,7 +116,7 @@ export default function Auth() {
         </div>
 
         <p className="relative z-10 text-orange-200 text-xs self-start mt-5">
-          © 2026 SaigonNightBites · Đem lại sự tiện lợi cho bạn
+          © 2026 SaigonNightBites · Để tôi giúp bạn lựa chọn món ăn nhé!
         </p>
       </div>
 

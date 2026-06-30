@@ -1,4 +1,4 @@
-export function getWeatherEmoji(condition?: string): string {
+export const getWeatherEmoji = (condition?: string): string => {
   if (!condition) return '🌤️'
   const c = condition.toLowerCase()
   if (c.includes('rain') || c.includes('mưa')) return '🌧️'

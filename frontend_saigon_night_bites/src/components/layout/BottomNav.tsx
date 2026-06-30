@@ -9,7 +9,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: '/', icon: FiHome, label: 'Trang chủ' },
+  { path: '/home', icon: FiHome, label: 'Trang chủ' },
   { path: '/discovery', icon: FiCompass, label: 'Kết quả' },
   { path: '/saved', icon: FiHeart, label: 'Yêu thích' },
   { path: '/history', icon: FiClock, label: 'Lịch sử' },

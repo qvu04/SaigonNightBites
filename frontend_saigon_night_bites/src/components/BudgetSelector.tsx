@@ -12,7 +12,7 @@ interface Props {
   onChange: (budget: Budget) => void
 }
 
-export default function BudgetSelector({ value, onChange }: Props) {
+export const BudgetSelector = ({ value, onChange }: Props) => {
   return (
     <div className="flex gap-2">
       {BUDGETS.map((budget) => {

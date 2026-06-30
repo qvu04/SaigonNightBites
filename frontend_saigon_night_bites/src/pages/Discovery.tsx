@@ -4,13 +4,10 @@ import { toast } from 'sonner'
 import { FiArrowLeft } from 'react-icons/fi'
 import Header from '../components/layout/Header'
 import BottomNav from '../components/layout/BottomNav'
-import AIInsightCard from '../components/AIInsightCard'
-import FoodCard from '../components/FoodCard'
-import MapContainer from '../components/MapContainer'
-import SkeletonCard from '../components/SkeletonCard'
 import { getFavorites, addFavorite, removeFavorite } from '../api/favorites'
 import type { Place, Coords } from '../types'
 import type { AxiosError } from 'axios'
+import { AIInsightCard, FoodCard, MapContainer, SkeletonCard } from '../components'
 
 interface LocationState {
   places: Place[]
@@ -49,7 +46,7 @@ export default function Discovery() {
           Vui lòng quay lại trang chủ để tìm kiếm
         </p>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/home')}
           className="px-6 py-3 rounded-xl bg-orange-500 text-white font-semibold text-sm"
         >
           Về trang chủ
@@ -143,7 +140,7 @@ export default function Discovery() {
                   Hãy thử mở rộng bán kính tìm kiếm.
                 </p>
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/home')}
                   className="px-6 py-3 rounded-xl bg-orange-500 text-white font-semibold text-sm"
                 >
                   Tìm lại

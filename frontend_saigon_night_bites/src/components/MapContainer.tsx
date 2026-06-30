@@ -7,7 +7,7 @@ interface Props {
   tall?: boolean
 }
 
-export default function MapContainer({ places = [], userLocation, tall = false }: Props) {
+export const MapContainer = ({ places = [], userLocation, tall = false }: Props) => {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
   const heightClass = tall ? 'h-80 lg:h-[420px]' : 'h-48'
 

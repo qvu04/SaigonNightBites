@@ -15,10 +15,10 @@ const MOOD_MAP: Record<Mood, string> = {
   savory: 'Thèm mặn 🍜',
 }
 
-export function formatBudget(budget: string): string {
+export const formatBudget = (budget: string): string => {
   return BUDGET_MAP[budget as Budget] ?? budget
 }
 
-export function formatMood(mood: string): string {
+export const formatMood = (mood: string): string => {
   return MOOD_MAP[mood as Mood] ?? mood
 }
