@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as authService from '../services/authService.js';
+import * as refreshTokenService from '../services/refreshTokenService.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
@@ -60,12 +61,60 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
-    const token = authService.signToken({ userId: user.id, email: user.email });
+    const accessToken = authService.signToken({ userId: user.id, email: user.email });
+    const { token: refreshToken, expiresAt: refreshExpiresAt } =
+      await refreshTokenService.createRefreshToken(user.id);
 
     res.status(200).json({
       success: true,
-      data: { token, user: { id: user.id, email: user.email } },
+      data: {
+        accessToken,
+        refreshToken,
+        refreshExpiresAt: refreshExpiresAt.toISOString(),
+        user: { id: user.id, email: user.email },
+      },
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { refreshToken } = req.body as { refreshToken?: string };
+    if (!refreshToken) {
+      res.status(400).json({ success: false, error: 'Refresh token là bắt buộc' });
+      return;
+    }
+
+    const result = await refreshTokenService.validateAndRotate(refreshToken);
+    if (!result) {
+      res.status(401).json({ success: false, error: 'Refresh token không hợp lệ hoặc đã hết hạn' });
+      return;
+    }
+
+    const accessToken = authService.signToken({ userId: result.userId, email: result.email });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        accessToken,
+        refreshToken: result.newToken,
+        refreshExpiresAt: result.expiresAt.toISOString(),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { refreshToken } = req.body as { refreshToken?: string };
+    if (refreshToken) {
+      await refreshTokenService.revokeRefreshToken(refreshToken);
+    }
+    res.status(200).json({ success: true, data: null });
   } catch (err) {
     next(err);
   }
