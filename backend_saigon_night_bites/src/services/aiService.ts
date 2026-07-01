@@ -1,4 +1,4 @@
-import { getModel } from '../config/gemini.js';
+import { groqClient, GROQ_MODEL } from '../config/gemini.js';
 import type { AIRecommendation, Mood, Budget } from '../types/index.js';
 
 const MOOD_MAP: Record<Mood, string> = {
@@ -35,14 +35,20 @@ Tình huống: Người dùng đang ở ${timeOfDay}, tâm trạng ${MOOD_MAP[mo
 
 Hãy gợi ý 3 đến 5 từ khóa món ăn Việt Nam hoặc loại hình ăn uống phổ biến tại TP.HCM, phù hợp để tìm kiếm trên Google Maps. Kèm theo một lý do ngắn (1-2 câu) bằng tiếng Việt.
 
-Trả về đúng format JSON sau, không thêm bất kỳ văn bản nào khác:
+Trả về đúng format JSON sau:
 {"keywords":["từ khóa 1","từ khóa 2","từ khóa 3"],"reason":"Lý do ngắn gọn tại sao những món này phù hợp."}`;
 }
 
 export async function getAIRecommendation(mood: Mood, budget: Budget): Promise<AIRecommendation> {
-  const model = getModel();
-  const result = await model.generateContent(buildPrompt(mood, budget));
-  const rawText = result.response.text();
+  const response = await groqClient.chat.completions.create({
+    model: GROQ_MODEL,
+    messages: [{ role: 'user', content: buildPrompt(mood, budget) }],
+    response_format: { type: 'json_object' },
+    temperature: 0.7,
+    max_tokens: 512,
+  });
+
+  const rawText = response.choices[0]?.message?.content ?? '';
 
   let parsed: { keywords: unknown; reason: unknown };
   try {

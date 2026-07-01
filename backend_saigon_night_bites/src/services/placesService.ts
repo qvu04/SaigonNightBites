@@ -1,8 +1,7 @@
 import axios from 'axios';
 import type { Place } from '../types/index.js';
 
-const PLACES_URL = 'https://places.googleapis.com/v1/places:searchText';
-const MIN_RATING = 4.0;
+const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 const MAX_RESULTS = 10;
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -16,53 +15,47 @@ function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
-function buildPhotoUrl(photoName: string): string | null {
-  if (!photoName || !process.env.GOOGLE_PLACES_API_KEY) return null;
-  return `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&key=${process.env.GOOGLE_PLACES_API_KEY}`;
+function buildQuery(lat: number, lng: number, radius: number): string {
+  return `[out:json][timeout:8];(node["amenity"~"restaurant|cafe|fast_food|food_court"](around:${radius},${lat},${lng}););out body ${MAX_RESULTS * 3};`;
 }
 
 export async function searchNearbyPlaces(
-  keywords: string[],
+  _keywords: string[],
   lat: number,
   lng: number,
   radius: number
 ): Promise<Place[]> {
-  const { data } = await axios.post(
-    PLACES_URL,
-    {
-      textQuery: keywords[0],
-      languageCode: 'vi',
-      openNow: true,
-      maxResultCount: 20,
-      locationBias: {
-        circle: { center: { latitude: lat, longitude: lng }, radius },
-      },
-      rankPreference: 'DISTANCE',
-    },
-    {
+  try {
+    const { data } = await axios.post(OVERPASS_URL, buildQuery(lat, lng, radius), {
       headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': process.env.GOOGLE_PLACES_API_KEY,
-        'X-Goog-FieldMask':
-          'places.id,places.displayName,places.rating,places.userRatingCount,places.formattedAddress,places.location,places.currentOpeningHours,places.photos',
+        'Content-Type': 'text/plain',
+        'User-Agent': 'SaigonNightBites/1.0',
       },
-      timeout: 8000,
-    }
-  );
+      timeout: 10000,
+    });
 
-  return ((data.places ?? []) as Record<string, any>[])
-    .filter((p) => (p.rating ?? 0) >= MIN_RATING)
-    .map((p) => ({
-      place_id: p.id as string,
-      name: (p.displayName?.text ?? '') as string,
-      rating: (p.rating ?? 0) as number,
-      user_ratings_total: (p.userRatingCount ?? 0) as number,
-      vicinity: (p.formattedAddress ?? '') as string,
-      location: { lat: p.location.latitude as number, lng: p.location.longitude as number },
-      open_now: (p.currentOpeningHours?.openNow ?? true) as boolean,
-      photo_url: p.photos?.[0]?.name ? buildPhotoUrl(p.photos[0].name as string) : null,
-      distance: haversineDistance(lat, lng, p.location.latitude as number, p.location.longitude as number),
-    }))
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, MAX_RESULTS);
+    const elements: Record<string, any>[] = data.elements ?? [];
+
+    return elements
+      .filter((el) => el.tags?.name)
+      .map((el) => {
+        const tags = el.tags ?? {};
+        return {
+          place_id: String(el.id),
+          name: (tags.name ?? '') as string,
+          rating: 0,
+          user_ratings_total: 0,
+          vicinity: [tags['addr:street'], tags['addr:city']].filter(Boolean).join(', ') || 'TP.HCM',
+          location: { lat: el.lat as number, lng: el.lon as number },
+          open_now: true,
+          photo_url: null,
+          distance: haversineDistance(lat, lng, el.lat as number, el.lon as number),
+        };
+      })
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, MAX_RESULTS);
+  } catch {
+    // Trả về mảng rỗng nếu Overpass timeout hoặc lỗi mạng
+    return [];
+  }
 }

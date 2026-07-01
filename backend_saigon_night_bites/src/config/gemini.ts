@@ -1,17 +1,8 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) throw new Error('Missing GEMINI_API_KEY environment variable');
+const apiKey = process.env.GROQ_API_KEY;
+if (!apiKey) throw new Error('Missing GROQ_API_KEY environment variable');
 
-const genAI = new GoogleGenerativeAI(apiKey);
+export const groqClient = new Groq({ apiKey });
 
-export function getModel() {
-  return genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    generationConfig: {
-      responseMimeType: 'application/json',
-      temperature: 0.7,
-      maxOutputTokens: 512,
-    },
-  });
-}
+export const GROQ_MODEL = 'llama-3.3-70b-versatile';
