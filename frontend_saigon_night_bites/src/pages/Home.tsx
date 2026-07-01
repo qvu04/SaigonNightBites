@@ -4,13 +4,12 @@ import { toast } from 'sonner'
 import { FiMapPin, FiAlertCircle, FiLogOut } from 'react-icons/fi'
 import Header from '../components/layout/Header'
 import BottomNav from '../components/layout/BottomNav'
-import { useLocation } from '../context/LocationContext'
-import { useAuth } from '../context/AuthContext'
 import { getAIRecommendation } from '../api/ai'
 import { searchPlaces } from '../api/places'
 import type { Mood, Budget } from '../types'
 import type { AxiosError } from 'axios'
-import { BudgetSelector, MoodSelector, RadiusSelector } from '../components'
+import { BudgetSelector, ConfirmModal, MoodSelector, RadiusSelector } from '../components'
+import { useAuthStore, useLocationStore } from '../stores'
 
 const HOW_IT_WORKS = [
   {
@@ -23,7 +22,7 @@ const HOW_IT_WORKS = [
     step: '02',
     emoji: '🤖',
     title: 'AI phân tích & gợi ý',
-    desc: 'Gemini AI xử lý ngữ cảnh của bạn và đề xuất những món ăn phù hợp nhất.',
+    desc: 'AI sẽ hỗ trợ xử lý ngữ cảnh của bạn và đề xuất những món ăn phù hợp nhất.',
   },
   {
     step: '03',
@@ -42,15 +41,28 @@ const FEATURES = [
 
 export default function Home() {
   const navigate = useNavigate()
-  const { location, loading: gpsLoading, error: gpsError, setManualLocation } = useLocation()
-  const { logout } = useAuth()
+  const location = useLocationStore((s) => s.location)
+  const gpsLoading = useLocationStore((s) => s.loading)
+  const gpsError = useLocationStore((s) => s.error)
+  const setManualLocation = useLocationStore((s) => s.setManualLocation)
+  const logout = useAuthStore((s) => s.logout)
 
-  const [mood, setMood] = useState<Mood | null>(null)
-  const [budget, setBudget] = useState<Budget>('mid')
-  const [radius, setRadius] = useState(2000)
-  const [manualLat, setManualLat] = useState('')
-  const [manualLng, setManualLng] = useState('')
-  const [searching, setSearching] = useState(false)
+  const [mood, setMood] = useState<Mood | null>(null);
+  const [budget, setBudget] = useState<Budget>('mid');
+  const [radius, setRadius] = useState(2000);
+  const [manualLat, setManualLat] = useState('');
+  const [manualLng, setManualLng] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [logoutLoading, setLogoutLoading] = useState(false)
+
+  const handleLogoutConfirm = async () => {
+    setLogoutLoading(true)
+    await new Promise((resolve) => setTimeout(resolve, 700))
+    await logout()
+    setLogoutLoading(false)
+    setShowLogoutModal(false)
+  }
 
   const activeLocation = location || (manualLat && manualLng
     ? { latitude: parseFloat(manualLat), longitude: parseFloat(manualLng) }
@@ -151,7 +163,9 @@ export default function Home() {
                 </div>
               </div>
               <button
-                onClick={() => { void logout() }}
+                onClick={() => {
+                  setShowLogoutModal(true);
+                }}
                 className="p-2 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 aria-label="Đăng xuất"
               >
@@ -280,6 +294,18 @@ export default function Home() {
           </div>
         </div>
       </main>
+      <ConfirmModal
+        open={showLogoutModal}
+        variant="logout"
+        icon={<FiLogOut className="w-6 h-6" />}
+        title="Bạn có chắc muốn đăng xuất?"
+        description="Hành trình khám phá ẩm thực của bạn sẽ bị gián đoạn. Bạn có muốn tiếp tục?"
+        cancelText="Hủy"
+        confirmText="Đăng xuất"
+        confirmLoading={logoutLoading}
+        onClose={() => { if (!logoutLoading) setShowLogoutModal(false) }}
+        onConfirm={() => { void handleLogoutConfirm() }}
+      />
       <BottomNav />
     </div>
   )

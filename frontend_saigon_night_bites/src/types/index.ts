@@ -23,10 +23,10 @@ export interface Place {
   rating: number;
   user_ratings_total: number;
   vicinity: string;
-  location: PlaceLocation;
+  location: PlaceLocation | null;
   open_now: boolean;
   photo_url: string | null;
-  distance: number;
+  distance: number | null;
 }
 
 export interface FavoritePlace {

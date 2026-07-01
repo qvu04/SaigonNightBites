@@ -1,4 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
+
+const desktopQuery = window.matchMedia('(min-width: 1024px)')
+const subscribeDesktop = (cb: () => void) => {
+  desktopQuery.addEventListener('change', cb)
+  return () => desktopQuery.removeEventListener('change', cb)
+}
+const useIsDesktop = () =>
+  useSyncExternalStore(subscribeDesktop, () => desktopQuery.matches, () => false)
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -6,9 +14,9 @@ import { toast } from 'sonner'
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import animSrc from '../assets/animations/food_location.lottie?url'
-import { useAuth } from '../context/AuthContext'
 import type { AxiosError } from 'axios'
 import { useLogin, useRegister } from '../hooks/mutation'
+import { useAuthStore } from '../stores'
 
 interface FormValues {
   email: string
@@ -24,6 +32,7 @@ const HIGHLIGHTS = [
 ]
 
 export default function Auth() {
+  const isDesktop = useIsDesktop()
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -32,7 +41,7 @@ export default function Auth() {
   const loading = isLogin ? pendingLogin : pendingRegister
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { login } = useAuth()
+  const login = useAuthStore((s) => s.login)
 
   useEffect(() => {
     const reason = searchParams.get('reason')
@@ -76,7 +85,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col items-center justify-between bg-gradient-to-br from-orange-500 to-orange-600 p-12 text-white overflow-hidden relative">
+      {isDesktop && <div className="flex flex-col items-center justify-between bg-gradient-to-br from-orange-500 to-orange-600 p-12 text-white overflow-hidden relative">
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/5" />
         <div className="absolute -bottom-16 -left-16 w-80 h-80 rounded-full bg-white/5" />
 
@@ -91,7 +100,7 @@ export default function Auth() {
                 src={animSrc}
                 loop
                 autoplay
-                style={{ width: '100%%', height: '100%' }}
+                style={{ width: '100%', height: '100%' }}
               />
             </div>
           </div>
@@ -118,11 +127,11 @@ export default function Auth() {
         <p className="relative z-10 text-orange-200 text-xs self-start mt-5">
           © 2026 SaigonNightBites · Để tôi giúp bạn lựa chọn món ăn nhé!
         </p>
-      </div>
+      </div>}
 
       <div className="flex flex-col items-center justify-center px-4 py-12 lg:px-12">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden text-center mb-6">
+          {!isDesktop && <div className="text-center mb-6">
             <div className="flex justify-center mb-2">
               <div className="w-32 h-32">
                 <DotLottieReact
@@ -139,8 +148,8 @@ export default function Auth() {
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
               Tối nay ăn gì tại TP.HCM?
             </p>
-          </div>
-          <div className="hidden lg:block mb-8">
+          </div>}
+          {isDesktop && <div className="mb-8">
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               {isLogin ? 'Chào mừng trở lại!' : 'Tạo tài khoản mới'}
             </h2>
@@ -149,7 +158,7 @@ export default function Auth() {
                 ? 'Đăng nhập để tiếp tục khám phá ẩm thực Sài Gòn'
                 : 'Tham gia để bắt đầu trải nghiệm'}
             </p>
-          </div>
+          </div>}
 
           <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl dark:shadow-none border border-zinc-100 dark:border-zinc-800 p-6">
             <div className="flex rounded-2xl bg-zinc-100 dark:bg-zinc-800 p-1 mb-6">
