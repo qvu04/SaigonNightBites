@@ -122,10 +122,3 @@ Dự án này sử dụng kiến trúc **AI-driven Data Fetching**. Cụ thể:
 Cách tiếp cận này giúp giảm thiểu hiện tượng AI "bịa" ra địa chỉ quán không có thật (Hallucination) [tại đây](https://foody.vn).
 
 ---
-
-## 7. Gợi ý hướng kiếm tiền (Tham khảo)
-
-Dự án giải quyết một bài toán có tần suất lặp lại rất cao (mỗi ngày một lần). Một số hướng thương mại hóa khả thi tại thị trường Việt Nam bao gồm:
-- **Affiliate Marketing (Tiếp thị liên kết):** Tích hợp nút *"Đặt xe đến quán"* (gắn link affiliate của Grab/Xanh SM) hoặc *"Đặt giao về nhà"* (gắn link ShopeeFood/GrabFood). Bạn sẽ nhận được hoa hồng trên mỗi cuốc xe hoặc đơn hàng phát sinh.
-- **Quảng cáo địa phương (Local Ads):** Khi ứng dụng có lượng người dùng ổn định tại các quận của TP.HCM, các quán ăn nhỏ sẵn sàng trả phí để được hệ thống AI "ưu tiên" gợi ý nằm trong Top đầu khi có người tìm kiếm quanh khu vực đó.
-- **Tính năng Group Vote:** Gói trả phí dành cho nhóm bạn/văn phòng cùng vote món ăn tối, AI sẽ tự động phân tích gu của cả nhóm để tìm ra quán ăn trung hòa nhất cho tất cả mọi người.
