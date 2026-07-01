@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
 import { FiSun, FiMoon } from 'react-icons/fi'
-import { useTheme } from '../context/ThemeContext'
+import { useThemeStore } from '../stores'
 
 export const DarkModeSwitch = () => {
-  const { isDark, toggleTheme } = useTheme()
+  const isDark = useThemeStore((s) => s.isDark)
+  const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
   return (
     <button

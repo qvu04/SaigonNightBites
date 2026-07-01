@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useAuth } from './context'
+import { useAuthStore } from './stores'
 
 function LoadingScreen() {
   return (
@@ -23,7 +23,8 @@ function LoadingScreen() {
 }
 
 export default function RootRedirect() {
-  const { token, isLoading } = useAuth()
+  const token = useAuthStore((s) => s.token)
+  const isLoading = useAuthStore((s) => s.isLoading)
 
   if (isLoading) return <LoadingScreen />
   return token ? <Navigate to="/home" replace /> : <Navigate to="/auth" replace />

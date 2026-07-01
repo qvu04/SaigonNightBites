@@ -2,7 +2,7 @@ import { type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FiLock, FiArrowLeft } from 'react-icons/fi'
-import { useAuth } from './context'
+import { useAuthStore } from './stores'
 
 function UnauthorizedScreen() {
   const navigate = useNavigate()
@@ -72,7 +72,8 @@ function LoadingScreen() {
 }
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { token, isLoading } = useAuth()
+  const token = useAuthStore((s) => s.token)
+  const isLoading = useAuthStore((s) => s.isLoading)
 
   if (isLoading) return <LoadingScreen />
   if (!token) return <UnauthorizedScreen />
