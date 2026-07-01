@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import supabase from '../config/supabase.js';
 
-// const REFRESH_TOKEN_DAYS = 7;
-const REFRESH_TOKEN_DAYS = 1 / (24 * 60);
+const REFRESH_TOKEN_DAYS = 7;
+// const REFRESH_TOKEN_DAYS = 1 / (24 * 60);
 
 interface RefreshTokenRow {
   user_id: string;

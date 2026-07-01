@@ -12,8 +12,8 @@ import { authService } from '../services'
 import { ConfirmModal, CountdownDisplay } from '../components'
 import { FiClock } from 'react-icons/fi'
 
-// const WARNING_MS_BEFORE_EXPIRY = 24 * 60 * 60 * 1000 // warn 24h before refresh token expires
-const WARNING_MS_BEFORE_EXPIRY = 6 * 1000;
+const WARNING_MS_BEFORE_EXPIRY = 24 * 60 * 60 * 1000 // warn 24h before refresh token expires
+// const WARNING_MS_BEFORE_EXPIRY = 6 * 1000;
 interface AuthContextValue {
   token: string | null
   user: User | null
