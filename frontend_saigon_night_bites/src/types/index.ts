@@ -24,9 +24,10 @@ export interface Place {
   user_ratings_total: number;
   vicinity: string;
   location: PlaceLocation | null;
-  open_now: boolean;
+  open_now: boolean | null;
   photo_url: string | null;
   distance: number | null;
+  ai_reason?: string | null;
 }
 
 export interface FavoritePlace {
@@ -53,6 +54,12 @@ export interface SearchHistoryItem {
 export interface AIRecommendation {
   keywords: string[];
   reason: string;
+}
+
+export interface ProsConsInsight {
+  pros: string[];
+  cons: string[];
+  comments: string[];
 }
 
 export interface SearchParams {

@@ -48,8 +48,8 @@ export default function Home() {
   const logout = useAuthStore((s) => s.logout)
 
   const [mood, setMood] = useState<Mood | null>(null);
-  const [budget, setBudget] = useState<Budget>('mid');
-  const [radius, setRadius] = useState(2000);
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [radius, setRadius] = useState<number | null>(null);
   const [manualLat, setManualLat] = useState('');
   const [manualLng, setManualLng] = useState('');
   const [searching, setSearching] = useState(false);
@@ -107,6 +107,7 @@ export default function Home() {
 
       const placesRes = await searchPlaces({
         keywords,
+        reason,
         latitude: activeLocation.latitude,
         longitude: activeLocation.longitude,
         radius,

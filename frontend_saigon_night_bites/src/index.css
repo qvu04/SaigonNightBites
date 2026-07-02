@@ -83,3 +83,20 @@
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 16px);
 }
+
+/* Leaflet popup không tự theo dark mode của app vì style nằm trong leaflet.css riêng */
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background: #27272a;
+  color: #f4f4f5;
+}
+
+.dark .leaflet-popup-close-button {
+  color: #a1a1aa !important;
+}
+
+/* Padding mặc định của Leaflet (13px 24px) khiến nội dung popup bị rời rạc — thu gọn lại */
+.leaflet-popup-content {
+  margin: 10px 14px;
+  line-height: 1.35;
+}
