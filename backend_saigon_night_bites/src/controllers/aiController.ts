@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as aiService from '../services/aiService.js';
 import * as historyService from '../services/historyService.js';
+import { getMockComments } from '../services/mockComments.js';
 import type { Mood, Budget } from '../types/index.js';
 
 const VALID_MOODS = new Set<Mood>(['tired', 'happy', 'date', 'group', 'sweet', 'savory']);
@@ -55,6 +56,24 @@ export async function recommend(req: Request, res: Response, next: NextFunction)
     });
 
     res.status(200).json({ success: true, data: { keywords, reason, historyId } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getInsights(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { name } = req.body as { name?: unknown };
+
+    if (typeof name !== 'string' || !name.trim()) {
+      res.status(400).json({ success: false, error: 'Thiếu tham số: name' });
+      return;
+    }
+
+    const comments = getMockComments(name.trim().slice(0, 200));
+    const insight = await aiService.analyzeProsCons(name.trim().slice(0, 200), comments);
+
+    res.status(200).json({ success: true, data: insight });
   } catch (err) {
     next(err);
   }

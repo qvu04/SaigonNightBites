@@ -1,5 +1,5 @@
 import { groqClient, GROQ_MODEL } from '../config/gemini.js';
-import type { AIRecommendation, Mood, Budget } from '../types/index.js';
+import type { AIRecommendation, Mood, Budget, Place, RankedPlace, ProsConsInsight } from '../types/index.js';
 
 const MOOD_MAP: Record<Mood, string> = {
   tired: 'mệt mỏi, cần hồi phục năng lượng',
@@ -23,6 +23,16 @@ function sanitizeText(text: string): string {
     .replace(/on\w+=/gi, '')
     .trim()
     .slice(0, 500);
+}
+
+function parseJsonLoose(rawText: string): Record<string, unknown> {
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    const match = rawText.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('AI trả về định dạng không hợp lệ');
+    return JSON.parse(match[0]);
+  }
 }
 
 function buildPrompt(mood: Mood, budget: Budget): string {
@@ -49,15 +59,7 @@ export async function getAIRecommendation(mood: Mood, budget: Budget): Promise<A
   });
 
   const rawText = response.choices[0]?.message?.content ?? '';
-
-  let parsed: { keywords: unknown; reason: unknown };
-  try {
-    parsed = JSON.parse(rawText);
-  } catch {
-    const match = rawText.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('AI trả về định dạng không hợp lệ');
-    parsed = JSON.parse(match[0]);
-  }
+  const parsed = parseJsonLoose(rawText) as { keywords: unknown; reason: unknown };
 
   if (!Array.isArray(parsed.keywords) || !parsed.reason) {
     throw new Error('Cấu trúc phản hồi AI không hợp lệ');
@@ -67,4 +69,96 @@ export async function getAIRecommendation(mood: Mood, budget: Budget): Promise<A
   const reason = sanitizeText(parsed.reason as string);
 
   return { keywords, reason };
+}
+
+const RANK_LIMIT = 10;
+
+function buildRankPrompt(places: Place[], keywords: string[], reason: string): string {
+  const candidates = places.map((p) => ({ id: p.place_id, name: p.name, vicinity: p.vicinity }));
+
+  return `Bạn là trợ lý ẩm thực tại TP.HCM. Chỉ trả về JSON hợp lệ, không giải thích thêm bất kỳ điều gì.
+
+Ngữ cảnh gợi ý: từ khóa "${keywords.join(', ')}", lý do: "${reason}".
+
+Danh sách ứng viên quán ăn (id, tên, địa chỉ), chỉ dựa vào dữ liệu này, không bịa thêm thông tin không có:
+${JSON.stringify(candidates)}
+
+Chọn tối đa ${RANK_LIMIT} quán phù hợp nhất với ngữ cảnh trên, sắp xếp theo độ phù hợp giảm dần. Với mỗi quán, viết 1 câu ngắn (dưới 20 từ, tiếng Việt) giải thích tại sao phù hợp, dựa trên tên quán.
+
+Trả về đúng format JSON sau, "id" phải lấy từ danh sách ứng viên ở trên:
+{"ranked":[{"id":"...","ai_reason":"..."}]}`;
+}
+
+export async function rankPlacesByRelevance(
+  places: Place[],
+  keywords: string[],
+  reason: string
+): Promise<RankedPlace[]> {
+  if (places.length === 0) return [];
+
+  const safeKeywords = keywords.map(sanitizeText).filter(Boolean).slice(0, 5);
+  const safeReason = sanitizeText(reason);
+
+  const response = await groqClient.chat.completions.create({
+    model: GROQ_MODEL,
+    messages: [{ role: 'user', content: buildRankPrompt(places, safeKeywords, safeReason) }],
+    response_format: { type: 'json_object' },
+    temperature: 0.4,
+    max_tokens: 1024,
+  });
+
+  const rawText = response.choices[0]?.message?.content ?? '';
+  const parsed = parseJsonLoose(rawText) as { ranked: unknown };
+
+  if (!Array.isArray(parsed.ranked)) {
+    throw new Error('Cấu trúc phản hồi AI không hợp lệ');
+  }
+
+  const validIds = new Set(places.map((p) => p.place_id));
+
+  return (parsed.ranked as Array<{ id?: unknown; ai_reason?: unknown }>)
+    .filter((r) => typeof r.id === 'string' && validIds.has(r.id) && r.ai_reason)
+    .map((r) => ({ place_id: r.id as string, ai_reason: sanitizeText(String(r.ai_reason)).slice(0, 150) }))
+    .slice(0, RANK_LIMIT);
+}
+
+const INSIGHT_ITEM_LIMIT = 3;
+
+function buildInsightPrompt(placeName: string, comments: string[]): string {
+  return `Bạn là trợ lý ẩm thực tại TP.HCM. Chỉ trả về JSON hợp lệ, không giải thích thêm bất kỳ điều gì.
+
+Dưới đây là các bình luận thật của khách về quán "${placeName}":
+${JSON.stringify(comments)}
+
+Chỉ dựa vào nội dung các bình luận trên (không suy diễn thêm), liệt kê tối đa ${INSIGHT_ITEM_LIMIT} ưu điểm và tối đa ${INSIGHT_ITEM_LIMIT} nhược điểm, mỗi ý ngắn gọn (dưới 12 từ, tiếng Việt). Nếu bình luận không đề cập ưu/nhược điểm nào thì để mảng đó rỗng.
+
+Trả về đúng format JSON sau:
+{"pros":["..."],"cons":["..."]}`;
+}
+
+export async function analyzeProsCons(placeName: string, comments: string[]): Promise<ProsConsInsight> {
+  if (comments.length === 0) return { pros: [], cons: [], comments: [] };
+
+  const safeName = sanitizeText(placeName);
+  const safeComments = comments.map(sanitizeText).filter(Boolean).slice(0, 10);
+
+  const response = await groqClient.chat.completions.create({
+    model: GROQ_MODEL,
+    messages: [{ role: 'user', content: buildInsightPrompt(safeName, safeComments) }],
+    response_format: { type: 'json_object' },
+    temperature: 0.4,
+    max_tokens: 512,
+  });
+
+  const rawText = response.choices[0]?.message?.content ?? '';
+  const parsed = parseJsonLoose(rawText) as { pros: unknown; cons: unknown };
+
+  if (!Array.isArray(parsed.pros) || !Array.isArray(parsed.cons)) {
+    throw new Error('Cấu trúc phản hồi AI không hợp lệ');
+  }
+
+  const pros = (parsed.pros as string[]).map(sanitizeText).filter(Boolean).slice(0, INSIGHT_ITEM_LIMIT);
+  const cons = (parsed.cons as string[]).map(sanitizeText).filter(Boolean).slice(0, INSIGHT_ITEM_LIMIT);
+
+  return { pros, cons, comments: safeComments };
 }

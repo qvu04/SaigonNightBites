@@ -1,8 +1,13 @@
 import axios from 'axios';
+import OpeningHours from 'opening_hours';
 import type { Place } from '../types/index.js';
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 const MAX_RESULTS = 10;
+const CANDIDATE_POOL = 20;
+
+// TODO: rating thật cần Google Places/Foursquare (chưa tích hợp) — placeholder này chỉ hiện ngoài production để test UI, tắt hẳn ở production để không hiện số giả cho người dùng thật
+const PLACEHOLDER_RATING = process.env.NODE_ENV === 'production' ? 0 : 4.0;
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;
@@ -19,6 +24,30 @@ function buildQuery(lat: number, lng: number, radius: number): string {
   return `[out:json][timeout:8];(node["amenity"~"restaurant|cafe|fast_food|food_court"](around:${radius},${lat},${lng}););out body ${MAX_RESULTS * 3};`;
 }
 
+// null = không có/không parse được opening_hours tag -> chưa chắc chắn, để FoodCard ẩn badge thay vì đoán bừa
+function computeOpenNow(openingHoursTag: unknown): boolean | null {
+  if (typeof openingHoursTag !== 'string' || !openingHoursTag.trim()) return null;
+  try {
+    return new OpeningHours(openingHoursTag).getState();
+  } catch {
+    return null;
+  }
+}
+
+// Hầu hết quán ăn nhỏ ở OSM không có addr:street đầy đủ — ghép thêm số nhà/phường/quận nếu có để tránh phải fallback về "TP.HCM" chung chung
+function buildVicinity(tags: Record<string, any>): string {
+  const streetLine = [tags['addr:housenumber'], tags['addr:street']].filter(Boolean).join(' ');
+  const parts = [
+    streetLine,
+    tags['addr:suburb'] || tags['addr:quarter'],
+    tags['addr:district'],
+    tags['addr:city'],
+  ].filter(Boolean);
+
+  return parts.length > 0 ? parts.join(', ') : 'TP.HCM';
+}
+
+// Overpass không hỗ trợ lọc theo món ăn — trả về pool ứng viên để aiService.rankPlacesByRelevance chọn lọc theo keywords/mood
 export async function searchNearbyPlaces(
   _keywords: string[],
   lat: number,
@@ -43,17 +72,17 @@ export async function searchNearbyPlaces(
         return {
           place_id: String(el.id),
           name: (tags.name ?? '') as string,
-          rating: 0,
+          rating: PLACEHOLDER_RATING,
           user_ratings_total: 0,
-          vicinity: [tags['addr:street'], tags['addr:city']].filter(Boolean).join(', ') || 'TP.HCM',
+          vicinity: buildVicinity(tags),
           location: { lat: el.lat as number, lng: el.lon as number },
-          open_now: true,
+          open_now: computeOpenNow(tags['opening_hours']),
           photo_url: null,
           distance: haversineDistance(lat, lng, el.lat as number, el.lon as number),
         };
       })
       .sort((a, b) => a.distance - b.distance)
-      .slice(0, MAX_RESULTS);
+      .slice(0, CANDIDATE_POOL);
   } catch {
     // Trả về mảng rỗng nếu Overpass timeout hoặc lỗi mạng
     return [];
